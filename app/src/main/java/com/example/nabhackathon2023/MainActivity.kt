@@ -10,6 +10,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         val pieChart = findViewById<PieChartView>(R.id.pieChart)
-        pieChart.setData(Stub.fakeData())
+        pieChart.setData(Stub.fakeData(resources.getStringArray(R.array.colorList)), 1000.0f)
     }
 }

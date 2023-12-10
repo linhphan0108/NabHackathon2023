@@ -8,11 +8,14 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <color name="bla1">#8C5ABD</color>
-    <color name="bla2">#615F5F</color>
-    <color name="bla3">#4795BF</color>
-    <color name="bla4">#2E409A</color>
-    <color name="bla5">#C56EBC</color>
-    <color name="bla6">#C33372</color>
-    <color name="bla7">#E18E8E</color>
+    <string-array name="colorList">
+        <item>#8C5ABD</item>
+        <item>#615F5F</item>
+        <item>#4795BF</item>
+        <item>#2E409A</item>
+        <item>#C56EBC</item>
+        <item>#C33372</item>
+        <item>#E18E8E</item>
+    </string-array>
+
 </resources>
