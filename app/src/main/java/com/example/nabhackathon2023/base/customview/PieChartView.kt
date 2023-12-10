@@ -62,7 +62,6 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
         if (isInEditMode){
             setData(Stub.fakeData(resources.getStringArray(R.array.colorList)), 1000.0f)
         }
-        setBackgroundColor(Color.CYAN)
     }
 
     override fun setMinimumDimension() {
@@ -125,7 +124,7 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
         }
 //        drawCaption(canvas, data!![0])
 
-//        animateRotation()
+        animateRotation()
     }
 
     private fun drawSlice(canvas: Canvas, slice: Slice){
@@ -214,7 +213,7 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
     private var rotateAnimation = 0f
     private fun animateRotation(){
         count++
-        rotateAnimation = 18f * count
+        rotateAnimation = if (count < 20) 18f * count else 0f
         if (count <= 20) {
             postDelayed({
                 invalidate()
