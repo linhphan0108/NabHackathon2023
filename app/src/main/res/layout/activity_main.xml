@@ -8,10 +8,10 @@
 
     <com.example.nabhackathon2023.base.customview.PieChartView
         android:id="@+id/pieChart"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="400dp"
+        android:layout_height="400dp"
         android:layout_marginTop="8dp"
-        android:padding="2dp"
+        android:padding="80dp"
         app:nabStrokeThickness="0.2"
         app:nabSDividerThickness="1"
         app:layout_constraintTop_toTopOf="parent"

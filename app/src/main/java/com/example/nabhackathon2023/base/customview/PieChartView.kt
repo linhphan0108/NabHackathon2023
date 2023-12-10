@@ -8,6 +8,7 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.util.AttributeSet
+import android.util.Log
 import com.example.nabhackathon2023.R
 import com.example.nabhackathon2023.base.util.dpToPx
 import com.example.nabhackathon2023.base.util.shorten
@@ -21,9 +22,11 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
     private var sliceDividerPaint: Paint
     private var captionPaint: Paint
     private var strokeWidthInPercent = 0.15f
+    private var strokeWidthInPixel = 0f
     private val strokeColor = Color.RED
     private val center = PointF()
     private val rectF = RectF()
+    private var radius = 0f
     private var endAngleOfLastSlice = 0f
     private var sweepAngleOfDivider = 0.2f
     private var sweepAngleOfAllDividers = 0f
@@ -59,6 +62,7 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
         if (isInEditMode){
             setData(Stub.fakeData(resources.getStringArray(R.array.colorList)), 1000.0f)
         }
+        setBackgroundColor(Color.CYAN)
     }
 
     override fun setMinimumDimension() {
@@ -111,15 +115,15 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
 
         drawTotal(canvas)
 
-        canvas.save()
-        canvas.rotate(-90f, center.x, center.y)
         for (slice in data!!){
+            canvas.save()
+            canvas.rotate(-90f, center.x, center.y)
             drawSlice(canvas, slice)
-            drawCaption(canvas, slice.name)
             drawSliceDivider(canvas)
+            canvas.restore()
+            drawCaption(canvas, slice)
         }
-
-        canvas.restore()
+//        drawCaption(canvas, data!![0])
 
 //        animateRotation()
     }
@@ -154,24 +158,43 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
         val yPos = center.y - (captionPaint.descent() + captionPaint.ascent()) / 2
         canvas.drawText(stringTotal, xPos, yPos, captionPaint)
     }
-    private fun drawCaption(canvas: Canvas, caption: String){
-//        canvas.drawText(caption, 0f, 0f, captionPaint)
+    private fun drawCaption(canvas: Canvas, slice: Slice){
+        if(slice.percent < 5.0f) return
+        val radiusOfCaption = radius + strokeWidthInPixel + 8.dpToPx() //todo hardcoded
+        val sweepAngle = (endAngleOfLastSlice.toDouble() - 90 - percentToAngle(slice.percent)/2)%360
+        val xStart = (center.x + (radius + strokeWidthInPixel*0.5) * Math.cos(sweepAngle * Math.PI / 189)).toFloat()
+        val yStart = (center.y + (radius + strokeWidthInPixel*0.5) * Math.sin(sweepAngle * Math.PI / 189)).toFloat()
+        val xEnd = (center.x + radiusOfCaption * Math.cos(sweepAngle * Math.PI / 189)).toFloat()
+        val yEnd = (center.y + radiusOfCaption * Math.sin(sweepAngle * Math.PI / 189)).toFloat()
+        captionPaint.apply {
+            textSize = 10.spToPx()
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+            textAlign = if(sweepAngle > -90 && sweepAngle < 90){
+                Paint.Align.LEFT
+            }else{
+                Paint.Align.RIGHT
+            }
+        }
+        canvas.drawText(slice.name, xEnd, yEnd, captionPaint)
+        canvas.drawLine(xStart, yStart, xEnd, yEnd, captionPaint)
+        Log.i("LINHPHAN", "${slice.name}: $x - $y; angle = $sweepAngle")
     }
 
     private fun calculatePieChartBounds(){
         val diameter = Math.min(width - paddingStart - paddingEnd, height - paddingTop - paddingBottom)
         var strokeWidth = diameter * 0.5f * strokeWidthInPercent
         if (strokeWidth * 2 > diameter) strokeWidth = diameter * 0.5f
-        val radius = diameter * 0.5 - strokeWidth * 0.5
+        radius = diameter * 0.5f - strokeWidth * 0.5f
         val ox = width * 0.5f
         val oy = height * 0.5f
         center.set(ox, oy)
-        val topPie = (ox - radius).toFloat() //include padding
-        val leftPie = (oy - radius).toFloat() //include padding
-        val rightPie = (ox + radius).toFloat() //include padding
-        val bottomPie = (oy + radius).toFloat() //include padding
+        val topPie = ox - radius //include padding
+        val leftPie = oy - radius //include padding
+        val rightPie = ox + radius //include padding
+        val bottomPie = oy + radius //include padding
         paint.strokeWidth = strokeWidth
         sliceDividerPaint.strokeWidth = strokeWidth
+        strokeWidthInPixel = strokeWidth
 
         rectF.set(leftPie, topPie, rightPie, bottomPie)
     }
