@@ -21,6 +21,7 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
 
     private var paint: Paint
     private var sliceDividerPaint: Paint
+    private var totalCaptionPaint: Paint
     private var captionPaint: Paint
     private var strokeWidthInPercent = 0.15f
     private var strokeWidthInPixel = 0f
@@ -56,12 +57,24 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
             style = Paint.Style.STROKE
         }
 
+        totalCaptionPaint = Paint().apply {
+            isAntiAlias = true
+            strokeWidth = 0f
+            color = Color.BLACK
+            style = Paint.Style.FILL
+            textAlign = Paint.Align.CENTER
+            textSize = totalTextSize
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        }
+
         captionPaint = Paint().apply {
             isAntiAlias = true
             strokeWidth = 0f
             color = Color.BLACK
             style = Paint.Style.FILL
             textAlign = Paint.Align.CENTER
+            textSize = captionTextSize
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
         }
 
         if (isInEditMode){
@@ -121,7 +134,7 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
 
         calculatePieChartBounds()
 
-        drawTotal(canvas)
+        drawTotalCaption(canvas)
 
         for (slice in data!!){
             canvas.save()
@@ -131,9 +144,8 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
             canvas.restore()
             drawCaption(canvas, slice)
         }
-//        drawCaption(canvas, data!![0])
 
-//        animateRotation()
+        animateRotation()
     }
 
     private fun drawSlice(canvas: Canvas, slice: Slice){
@@ -156,27 +168,21 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
         endAngleOfLastSlice += sweepAngle
     }
 
-    private fun drawTotal(canvas: Canvas){
+    private fun drawTotalCaption(canvas: Canvas){
         val stringTotal = "${total.shorten()}$currency"
-        captionPaint.apply {
-            textSize = totalTextSize
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        }
-        val xPos = width.toFloat()/2
-        val yPos = center.y - (captionPaint.descent() + captionPaint.ascent()) / 2
-        canvas.drawText(stringTotal, xPos, yPos, captionPaint)
+        val xPos = center.x
+        val yPos = center.y - (totalCaptionPaint.descent() + totalCaptionPaint.ascent()) / 2
+        canvas.drawText(stringTotal, xPos, yPos, totalCaptionPaint)
     }
     private fun drawCaption(canvas: Canvas, slice: Slice){
         if(slice.percent < thresholdToShowCaption) return
         val radiusOfCaption = radius + strokeWidthInPixel + 8.dpToPx() //todo hardcoded
-        val sweepAngle = (endAngleOfLastSlice.toDouble() + rotate - percentToAngle(slice.percent)/2)%360
+        val sweepAngle = (endAngleOfLastSlice.toDouble() + rotateAnimation + rotate - percentToAngle(slice.percent)/2)%360
         val xStart = (center.x + (radius + strokeWidthInPixel*0.5) * Math.cos(sweepAngle * Math.PI / PI_IN_DEGREE)).toFloat()
         val yStart = (center.y + (radius + strokeWidthInPixel*0.5) * Math.sin(sweepAngle * Math.PI / PI_IN_DEGREE)).toFloat()
         val xEnd = (center.x + radiusOfCaption * Math.cos(sweepAngle * Math.PI / PI_IN_DEGREE)).toFloat()
         val yEnd = (center.y + radiusOfCaption * Math.sin(sweepAngle * Math.PI / PI_IN_DEGREE)).toFloat()
         captionPaint.apply {
-            textSize = captionTextSize
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
             textAlign = if(sweepAngle > -90 && sweepAngle < 90){
                 Paint.Align.LEFT
             }else{
