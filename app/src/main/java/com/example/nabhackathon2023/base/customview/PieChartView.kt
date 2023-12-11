@@ -24,7 +24,7 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
     BaseCustomView(context, attrs, defStyleAttr, defStyleRes) {
 
     private var paint: Paint
-    private var sliceDividerPaint: Paint
+//    private var sliceDividerPaint: Paint
     private var totalCaptionPaint: Paint
     private var captionPaint: Paint
 
@@ -32,12 +32,14 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
     private var strokeWidthInPixel = 0f
     private val strokeColor = Color.RED
     private val center = PointF()
-    private val rectF = RectF()
+    private val pieChartBounds = RectF()
+    private val highlightedSliceBounds = RectF()
     private var radius = 0f
     private var rotate = -90f
     private var endAngleOfLastSlice = 0f
     private var sweepAngleOfDivider = 0.2f
     private var sweepAngleOfAllDividers = 0f
+    private var highlightedSliceEleven = 4.dpToPx()
 
     private var data: List<Slice>? = null
     private var total = 0f
@@ -60,12 +62,12 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
             style = Paint.Style.STROKE
         }
 
-        sliceDividerPaint = Paint().apply {
-            isAntiAlias = true
-            strokeWidth = 0f
-            color = Color.WHITE
-            style = Paint.Style.STROKE
-        }
+//        sliceDividerPaint = Paint().apply {
+//            isAntiAlias = true
+//            strokeWidth = 0f
+//            color = Color.WHITE
+//            style = Paint.Style.STROKE
+//        }
 
         totalCaptionPaint = Paint().apply {
             isAntiAlias = true
@@ -123,6 +125,7 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
         captionTextSize = t.getDimension(R.styleable.PieChartView_nabCaptionTextSize, captionTextSize)
         thresholdToShowCaption = t.getFloat(R.styleable.PieChartView_nabThresholdToShowCaption, thresholdToShowCaption)
         animateDuration = t.getInt(R.styleable.PieChartView_nabAnimateDuration, animateDuration.toInt()).toLong()
+        highlightedSliceEleven = t.getDimension(R.styleable.PieChartView_highlightedSliceEleven, highlightedSliceEleven)
 
         //Recycle the typed array
         t.recycle()
@@ -170,15 +173,15 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
         paint.color = colorInt
         val sweepAngle = percentToAngle(slice.percent)
         val startAngle = (endAngleOfLastSlice + rotateAnimation) % 360
-        canvas.drawArc(rectF, startAngle, sweepAngle, false, paint)
+        canvas.drawArc(if (slice.isHighlighted) highlightedSliceBounds else pieChartBounds, startAngle, sweepAngle, false, paint)
         endAngleOfLastSlice = (endAngleOfLastSlice + sweepAngle) % 360
         Log.i("LINHPHAN", "${slice.name}: $x - $y; rotateAnimation = $rotateAnimation; startAngle = $startAngle")
     }
 
     private fun drawSliceDivider(canvas: Canvas) {
         val sweepAngle = sweepAngleOfDivider
-        val startAngle = (endAngleOfLastSlice + rotateAnimation) % 360
-        canvas.drawArc(rectF, startAngle, sweepAngle, false, sliceDividerPaint)
+//        val startAngle = (endAngleOfLastSlice + rotateAnimation) % 360
+//        canvas.drawArc(pieChartBounds, startAngle, sweepAngle, false, sliceDividerPaint)
         endAngleOfLastSlice = (endAngleOfLastSlice + sweepAngle) % 360
     }
 
@@ -221,15 +224,16 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
         val rightPie = ox + radius //include padding
         val bottomPie = oy + radius //include padding
         paint.strokeWidth = strokeWidth
-        sliceDividerPaint.strokeWidth = strokeWidth
+//        sliceDividerPaint.strokeWidth = strokeWidth
         strokeWidthInPixel = strokeWidth
 
-        rectF.set(leftPie, topPie, rightPie, bottomPie)
+        highlightedSliceBounds.set(leftPie, topPie, rightPie, bottomPie)
+        pieChartBounds.set(leftPie + highlightedSliceEleven, topPie + highlightedSliceEleven, rightPie - highlightedSliceEleven, bottomPie - highlightedSliceEleven)
     }
 
     private fun calculateDivider(){
         if (data.isNullOrEmpty()) return
-        val numberOfDivider = data!!.size - 1
+        val numberOfDivider = data!!.size
         sweepAngleOfAllDividers = numberOfDivider * sweepAngleOfDivider
     }
 

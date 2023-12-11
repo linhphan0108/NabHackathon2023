@@ -7,5 +7,6 @@
         <attr name="nabCaptionTextSize" format="dimension"/>
         <attr name="nabThresholdToShowCaption" format="float" />
         <attr name="nabAnimateDuration" format="integer" />
+        <attr name="highlightedSliceEleven" format="dimension" />
     </declare-styleable>
 </resources>
