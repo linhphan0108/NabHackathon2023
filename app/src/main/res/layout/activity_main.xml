@@ -12,8 +12,11 @@
         android:layout_height="400dp"
         android:layout_marginTop="8dp"
         android:padding="80dp"
-        app:nabStrokeThickness="0.2"
-        app:nabSDividerThickness="1"
+        app:nabStrokeThickness="0.3"
+        app:nabDividerThickness="1"
+        app:nabTotalTextSize="20sp"
+        app:nabCaptionTextSize="10sp"
+        app:nabThresholdToShowCaption="5.0"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>

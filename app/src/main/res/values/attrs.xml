@@ -2,6 +2,9 @@
 <resources>
     <declare-styleable name="PieChartView">
         <attr name="nabStrokeThickness" format="float" />
-        <attr name="nabSDividerThickness" format="float" />
+        <attr name="nabDividerThickness" format="float" />
+        <attr name="nabTotalTextSize" format="dimension"/>
+        <attr name="nabCaptionTextSize" format="dimension"/>
+        <attr name="nabThresholdToShowCaption" format="float" />
     </declare-styleable>
 </resources>

@@ -15,6 +15,7 @@ import com.example.nabhackathon2023.base.util.shorten
 import com.example.nabhackathon2023.base.util.spToPx
 
 
+private const val PI_IN_DEGREE = 180
 class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0, defStyleRes: Int = 0) :
     BaseCustomView(context, attrs, defStyleAttr, defStyleRes) {
 
@@ -27,12 +28,16 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
     private val center = PointF()
     private val rectF = RectF()
     private var radius = 0f
+    private var rotate = -90f
     private var endAngleOfLastSlice = 0f
     private var sweepAngleOfDivider = 0.2f
     private var sweepAngleOfAllDividers = 0f
     private var data: List<Slice>? = null
     private var total = 0f
     private var currency = "$" //todo
+    private var totalTextSize = 20.spToPx()
+    private var captionTextSize = 10.spToPx()
+    private var thresholdToShowCaption = 5.0f//in percent
 
     init {
         attractAttrs(context, attrs, defStyleAttr);
@@ -62,6 +67,7 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
         if (isInEditMode){
             setData(Stub.fakeData(resources.getStringArray(R.array.colorList)), 1000.0f)
         }
+        setBackgroundColor(Color.CYAN)
     }
 
     override fun setMinimumDimension() {
@@ -90,7 +96,10 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
         )
 
         strokeWidthInPercent = t.getFloat(R.styleable.PieChartView_nabStrokeThickness, strokeWidthInPercent)
-        sweepAngleOfDivider = t.getFloat(R.styleable.PieChartView_nabSDividerThickness, sweepAngleOfDivider)
+        sweepAngleOfDivider = t.getFloat(R.styleable.PieChartView_nabDividerThickness, sweepAngleOfDivider)
+        totalTextSize = t.getDimension(R.styleable.PieChartView_nabTotalTextSize, totalTextSize)
+        captionTextSize = t.getDimension(R.styleable.PieChartView_nabCaptionTextSize, captionTextSize)
+        thresholdToShowCaption = t.getFloat(R.styleable.PieChartView_nabThresholdToShowCaption, thresholdToShowCaption)
 
         //Recycle the typed array
         t.recycle()
@@ -116,7 +125,7 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
 
         for (slice in data!!){
             canvas.save()
-            canvas.rotate(-90f, center.x, center.y)
+            canvas.rotate(rotate, center.x, center.y)
             drawSlice(canvas, slice)
             drawSliceDivider(canvas)
             canvas.restore()
@@ -124,7 +133,7 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
         }
 //        drawCaption(canvas, data!![0])
 
-        animateRotation()
+//        animateRotation()
     }
 
     private fun drawSlice(canvas: Canvas, slice: Slice){
@@ -150,23 +159,23 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
     private fun drawTotal(canvas: Canvas){
         val stringTotal = "${total.shorten()}$currency"
         captionPaint.apply {
-            textSize = 20.spToPx()
+            textSize = totalTextSize
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
-        val xPos = center.x
+        val xPos = width.toFloat()/2
         val yPos = center.y - (captionPaint.descent() + captionPaint.ascent()) / 2
         canvas.drawText(stringTotal, xPos, yPos, captionPaint)
     }
     private fun drawCaption(canvas: Canvas, slice: Slice){
-        if(slice.percent < 5.0f) return
+        if(slice.percent < thresholdToShowCaption) return
         val radiusOfCaption = radius + strokeWidthInPixel + 8.dpToPx() //todo hardcoded
-        val sweepAngle = (endAngleOfLastSlice.toDouble() - 90 - percentToAngle(slice.percent)/2)%360
-        val xStart = (center.x + (radius + strokeWidthInPixel*0.5) * Math.cos(sweepAngle * Math.PI / 189)).toFloat()
-        val yStart = (center.y + (radius + strokeWidthInPixel*0.5) * Math.sin(sweepAngle * Math.PI / 189)).toFloat()
-        val xEnd = (center.x + radiusOfCaption * Math.cos(sweepAngle * Math.PI / 189)).toFloat()
-        val yEnd = (center.y + radiusOfCaption * Math.sin(sweepAngle * Math.PI / 189)).toFloat()
+        val sweepAngle = (endAngleOfLastSlice.toDouble() + rotate - percentToAngle(slice.percent)/2)%360
+        val xStart = (center.x + (radius + strokeWidthInPixel*0.5) * Math.cos(sweepAngle * Math.PI / PI_IN_DEGREE)).toFloat()
+        val yStart = (center.y + (radius + strokeWidthInPixel*0.5) * Math.sin(sweepAngle * Math.PI / PI_IN_DEGREE)).toFloat()
+        val xEnd = (center.x + radiusOfCaption * Math.cos(sweepAngle * Math.PI / PI_IN_DEGREE)).toFloat()
+        val yEnd = (center.y + radiusOfCaption * Math.sin(sweepAngle * Math.PI / PI_IN_DEGREE)).toFloat()
         captionPaint.apply {
-            textSize = 10.spToPx()
+            textSize = captionTextSize
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
             textAlign = if(sweepAngle > -90 && sweepAngle < 90){
                 Paint.Align.LEFT
@@ -174,8 +183,9 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
                 Paint.Align.RIGHT
             }
         }
-        canvas.drawText(slice.name, xEnd, yEnd, captionPaint)
         canvas.drawLine(xStart, yStart, xEnd, yEnd, captionPaint)
+        canvas.drawText(slice.name, xEnd, yEnd, captionPaint)
+        canvas.drawCircle(xStart, yStart, 2.dpToPx(), captionPaint)
         Log.i("LINHPHAN", "${slice.name}: $x - $y; angle = $sweepAngle")
     }
 
