@@ -1,5 +1,8 @@
 package com.example.nabhackathon2023.base.customview
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -9,6 +12,7 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import android.util.AttributeSet
 import android.util.Log
+import android.view.animation.AccelerateDecelerateInterpolator
 import com.example.nabhackathon2023.R
 import com.example.nabhackathon2023.base.util.dpToPx
 import com.example.nabhackathon2023.base.util.shorten
@@ -23,6 +27,7 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
     private var sliceDividerPaint: Paint
     private var totalCaptionPaint: Paint
     private var captionPaint: Paint
+
     private var strokeWidthInPercent = 0.15f
     private var strokeWidthInPixel = 0f
     private val strokeColor = Color.RED
@@ -33,12 +38,17 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
     private var endAngleOfLastSlice = 0f
     private var sweepAngleOfDivider = 0.2f
     private var sweepAngleOfAllDividers = 0f
+
     private var data: List<Slice>? = null
     private var total = 0f
     private var currency = "$" //todo
     private var totalTextSize = 20.spToPx()
     private var captionTextSize = 10.spToPx()
     private var thresholdToShowCaption = 5.0f//in percent
+
+    private var animator: ValueAnimator? = null
+    private var rotateAnimation = 0f
+    private var animateDuration = 1000L
 
     init {
         attractAttrs(context, attrs, defStyleAttr);
@@ -80,7 +90,6 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
         if (isInEditMode){
             setData(Stub.fakeData(resources.getStringArray(R.array.colorList)), 1000.0f)
         }
-        setBackgroundColor(Color.CYAN)
     }
 
     override fun setMinimumDimension() {
@@ -113,6 +122,7 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
         totalTextSize = t.getDimension(R.styleable.PieChartView_nabTotalTextSize, totalTextSize)
         captionTextSize = t.getDimension(R.styleable.PieChartView_nabCaptionTextSize, captionTextSize)
         thresholdToShowCaption = t.getFloat(R.styleable.PieChartView_nabThresholdToShowCaption, thresholdToShowCaption)
+        animateDuration = t.getInt(R.styleable.PieChartView_nabAnimateDuration, animateDuration.toInt()).toLong()
 
         //Recycle the typed array
         t.recycle()
@@ -123,7 +133,7 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
         this.total = total
         if (data.isNotEmpty()){
             calculateDivider()
-            invalidate()
+            animateRotation()
         }
     }
 
@@ -144,8 +154,11 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
             canvas.restore()
             drawCaption(canvas, slice)
         }
+    }
 
-        animateRotation()
+    override fun onDetachedFromWindow() {
+        animator?.cancel()
+        super.onDetachedFromWindow()
     }
 
     private fun drawSlice(canvas: Canvas, slice: Slice){
@@ -156,16 +169,17 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
         }
         paint.color = colorInt
         val sweepAngle = percentToAngle(slice.percent)
-        val startAngle = endAngleOfLastSlice + rotateAnimation
+        val startAngle = (endAngleOfLastSlice + rotateAnimation) % 360
         canvas.drawArc(rectF, startAngle, sweepAngle, false, paint)
-        endAngleOfLastSlice += sweepAngle
+        endAngleOfLastSlice = (endAngleOfLastSlice + sweepAngle) % 360
+        Log.i("LINHPHAN", "${slice.name}: $x - $y; rotateAnimation = $rotateAnimation; startAngle = $startAngle")
     }
 
     private fun drawSliceDivider(canvas: Canvas) {
         val sweepAngle = sweepAngleOfDivider
-        val startAngle = endAngleOfLastSlice + rotateAnimation
+        val startAngle = (endAngleOfLastSlice + rotateAnimation) % 360
         canvas.drawArc(rectF, startAngle, sweepAngle, false, sliceDividerPaint)
-        endAngleOfLastSlice += sweepAngle
+        endAngleOfLastSlice = (endAngleOfLastSlice + sweepAngle) % 360
     }
 
     private fun drawTotalCaption(canvas: Canvas){
@@ -192,7 +206,6 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
         canvas.drawLine(xStart, yStart, xEnd, yEnd, captionPaint)
         canvas.drawText(slice.name, xEnd, yEnd, captionPaint)
         canvas.drawCircle(xStart, yStart, 2.dpToPx(), captionPaint)
-        Log.i("LINHPHAN", "${slice.name}: $x - $y; angle = $sweepAngle")
     }
 
     private fun calculatePieChartBounds(){
@@ -225,15 +238,24 @@ class PieChartView @JvmOverloads constructor(context: Context, attrs: AttributeS
         return (percent * remainingAngle)/ 100
     }
 
-    private var count = 0
-    private var rotateAnimation = 0f
-    private fun animateRotation(){
-        count++
-        rotateAnimation = if (count < 20) 18f * count else 0f
-        if (count <= 20) {
-            postDelayed({
+    private fun animateRotation() {
+        if (animateDuration <= 0) return
+        rotateAnimation = 0f
+        animator = ValueAnimator.ofFloat(0f, 720f).apply {
+            duration = animateDuration
+            repeatCount = 0
+            interpolator = AccelerateDecelerateInterpolator()
+            addUpdateListener {
+                val value = it.animatedValue as Float
+                rotateAnimation = value % 360
                 invalidate()
-            }, 16)
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+//                    rotateAnimation = 0f
+                }
+            })
+            start()
         }
     }
 }

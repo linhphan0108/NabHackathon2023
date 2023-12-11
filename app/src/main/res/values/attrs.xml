@@ -6,5 +6,6 @@
         <attr name="nabTotalTextSize" format="dimension"/>
         <attr name="nabCaptionTextSize" format="dimension"/>
         <attr name="nabThresholdToShowCaption" format="float" />
+        <attr name="nabAnimateDuration" format="integer" />
     </declare-styleable>
 </resources>

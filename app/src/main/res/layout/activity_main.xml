@@ -17,6 +17,7 @@
         app:nabTotalTextSize="20sp"
         app:nabCaptionTextSize="10sp"
         app:nabThresholdToShowCaption="5.0"
+        app:nabAnimateDuration="1000"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
